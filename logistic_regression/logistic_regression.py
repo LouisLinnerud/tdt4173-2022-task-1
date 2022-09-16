@@ -3,16 +3,14 @@ import pandas as pd
 # IMPORTANT: DO NOT USE ANY OTHER 3RD PARTY PACKAGES
 # (math, random, collections, functools, etc. are perfectly fine)
 
-
 class LogisticRegression:
     
-    def __init__(self):
-        # NOTE: Feel free add any hyperparameters 
-        # (with defaults) as you see fit
-        pass
-        
-    def fit(self, X, y):
-        """
+    def __init__(self, alpha=0.05, iterations=1000):
+        self.alpha = alpha # alpha is learning rate
+        self.iterations = iterations
+
+    def fit(self, X ,Y):
+        """ 
         Estimates parameters for the classifier
         
         Args:
@@ -21,10 +19,31 @@ class LogisticRegression:
             y (array<m>): a vector of floats containing 
                 m binary 0.0/1.0 labels
         """
-        # TODO: Implement
-        raise NotImplemented()
-    
+        # m x n input (#features = n, #samples = m)
+        self.m, self.n = X.shape 
+
+        # setting initial weight and bias to zero
+        self.w = np.zeros(self.n) 
+        self.b = 0
+        self.X = X
+        self.Y = Y
+        self.gradient_descend(self.iterations)
+
+    def gradient_descend(self, n):
+        for i in range(n):
+            # Prediction
+            Z = self.X.dot(self.w) + self.b # Z = w * X + b
+            Y_hat = sigmoid(Z)
+            # Update weight and bias
+            dw = (1 / self.m) * np.dot(self.X.T, (Y_hat - self.Y))
+            db = (1 / self.m) * np.sum(Y_hat - self.Y) 
+                #TODO
+                #is np.sum above nessicary?
+            self.w -= self.alpha * dw
+            self.b -= self.alpha * db
+   
     def predict(self, X):
+        self.X = X
         """
         Generates predictions
         
@@ -38,9 +57,10 @@ class LogisticRegression:
             A length m array of floats in the range [0, 1]
             with probability-like predictions
         """
-        # TODO: Implement
-        raise NotImplemented()
-        
+        Z = self.X.dot(self.w) + self.b # Z = w * X + b
+        Y_hat = np.where(sigmoid(Z) > 0.5 , 1, 0)
+
+        return Y_hat
 
         
 # --- Some utility functions 
@@ -61,7 +81,6 @@ def binary_accuracy(y_true, y_pred, threshold=0.5):
     correct_predictions = y_pred_thresholded == y_true 
     return correct_predictions.mean()
     
-
 def binary_cross_entropy(y_true, y_pred, eps=1e-15):
     """
     Computes binary cross entropy 
@@ -80,8 +99,7 @@ def binary_cross_entropy(y_true, y_pred, eps=1e-15):
         (1 - y_true) * (np.log(1 - y_pred))
     )
 
-
-def sigmoid(x):
+def sigmoid( x):
     """
     Applies the logistic function element-wise
     
@@ -96,5 +114,3 @@ def sigmoid(x):
         Element-wise sigmoid activations of the input 
     """
     return 1. / (1. + np.exp(-x))
-
-        
