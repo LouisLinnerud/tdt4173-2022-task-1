@@ -6,12 +6,28 @@ import pandas as pd
 
 class KMeans:
     
-    def __init__(self):
-        # NOTE: Feel free add any hyperparameters 
-        # (with defaults) as you see fit
-        pass
+    def __init__(self, K=2, max_iterations=100):
+        self.K = K
+        self.max_iterations = max_iterations
+
+    def make_clusters(self, X, centroids):
+        clusters = [ [] for _ in range(self.K)]
+        X = np.array(X) #transform from pd dataframe to numpy ndarray
+        for point_i, point_i_pos in enumerate(X):
+            if point_i > 0:
+                closest_centroid = np.argmin(euclidean_distance(point_i_pos, centroids))
+                clusters[closest_centroid].append(point_i)
+        return clusters
+
+    def improve_centroids(self, X, clusters):
+        new_centroids = np.zeros(shape=(self.K, self.n))
+        for i, cluster in enumerate(clusters):
+            new_centroid = np.mean(X.to_numpy()[cluster], axis=0)
+            new_centroids[i] = new_centroid
         
-    def fit(self, X):
+        return new_centroids
+
+    def fit(self, X, preprocess=False):
         """
         Estimates parameters for the classifier
         
@@ -19,9 +35,26 @@ class KMeans:
             X (array<m,n>): a matrix of floats with
                 m rows (#samples) and n columns (#features)
         """
-        # TODO: Implement
-        raise NotImplementedError()
-    
+        self.preprocess = preprocess
+        if self.preprocess:
+            X = preprocess_data(X)
+        #m is number of samples and n is number of features
+        self.m, self.n = X.shape
+        self.centroids = self.init_centroidsPP(X)
+        self.clusters = self.make_clusters(X, self.centroids)
+        
+        for i in range(self.max_iterations):
+            self.centroids = self.improve_centroids(X,self.clusters)
+            old_clusters = list(self.clusters)
+            self.clusters = self.make_clusters(X,self.centroids)
+            new_clusters = list(self.clusters)
+
+            if (old_clusters==new_clusters):
+                print(f"""
+                achieved best possible result after {i} iterations
+                """)
+                break
+                  
     def predict(self, X):
         """
         Generates predictions
@@ -38,9 +71,17 @@ class KMeans:
             there are 3 clusters, then a possible assignment
             could be: array([2, 0, 0, 1, 2, 1, 1, 0, 2, 2])
         """
-        # TODO: Implement 
-        raise NotImplementedError()
-    
+        y_pred = np.zeros(self.m)
+        clusters = self.make_clusters(X,self.centroids)
+        for cluster_index, cluster in enumerate(clusters):
+            for sample in cluster:
+                y_pred[sample] = cluster_index
+        returnArray = []
+        for i in range(len(y_pred)):
+            returnArray.append(int(y_pred[i]))
+        
+        return returnArray
+
     def get_centroids(self):
         """
         Returns the centroids found by the K-mean algorithm
@@ -56,14 +97,37 @@ class KMeans:
             [xm_1, xm_2, ..., xm_n]
         ])
         """
-        # TODO: Implement 
-        raise NotImplementedError()
+        return self.centroids
     
+    def init_centroidsPP(self,X):
+        centroids = np.zeros(shape=(self.K, self.n))
+        #pick any point for the first centroid
+        centroids[0] = X.sample(replace = False).any() 
+        
+        for centroid_i in range(1, self.K):
+            distances = np.zeros(len(X.values))
+            for sample_no, sample in enumerate(X.values):
+                min_dist = np.array([None, float('inf')])
+                for i in range(centroid_i):
+                    centroid = centroids[i]
+                    new_dist = euclidean_distance(sample, centroid)
+                    if new_dist < min_dist[1]: 
+                            min_dist = [i, new_dist]
+                distances[sample_no] = min_dist[1]
+            w = np.square(distances)/np.sum(np.square(distances))
+            new_centroid = np.random.choice(self.m, p = w)
+            centroids[centroid_i] = X.values[new_centroid]
+        
+        return centroids
     
-    
+
     
 # --- Some utility functions 
 
+def preprocess_data(X):
+    #X = np.array(X)
+    X['x1'] = X['x1']*10
+    return X
 
 def euclidean_distortion(X, z):
     """
@@ -123,7 +187,6 @@ def cross_euclidean_distance(x, y=None):
     assert len(x.shape) >= 2
     assert len(y.shape) >= 2
     return euclidean_distance(x[..., :, None, :], y[..., None, :, :])
-
 
 def euclidean_silhouette(X, z):
     """
