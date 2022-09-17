@@ -6,28 +6,12 @@ import pandas as pd
 
 class KMeans:
     
-    def __init__(self, K=2, max_iterations=100):
+    def __init__(self, K=2, preprocess=False, max_iterations=100):
         self.K = K
         self.max_iterations = max_iterations
-
-    def make_clusters(self, X, centroids):
-        clusters = [ [] for _ in range(self.K)]
-        X = np.array(X) #transform from pd dataframe to numpy ndarray
-        for point_i, point_i_pos in enumerate(X):
-            if point_i > 0:
-                closest_centroid = np.argmin(euclidean_distance(point_i_pos, centroids))
-                clusters[closest_centroid].append(point_i)
-        return clusters
-
-    def improve_centroids(self, X, clusters):
-        new_centroids = np.zeros(shape=(self.K, self.n))
-        for i, cluster in enumerate(clusters):
-            new_centroid = np.mean(X.to_numpy()[cluster], axis=0)
-            new_centroids[i] = new_centroid
-        
-        return new_centroids
-
-    def fit(self, X, preprocess=False):
+        self.preprocess = preprocess
+    
+    def fit(self, X):
         """
         Estimates parameters for the classifier
         
@@ -35,11 +19,10 @@ class KMeans:
             X (array<m,n>): a matrix of floats with
                 m rows (#samples) and n columns (#features)
         """
-        self.preprocess = preprocess
         if self.preprocess:
             X = preprocess_data(X)
-        #m is number of samples and n is number of features
-        self.m, self.n = X.shape
+        
+        self.m, self.n = X.shape # m is number of samples and n is number of features
         self.centroids = self.init_centroidsPP(X)
         self.clusters = self.make_clusters(X, self.centroids)
         
@@ -51,10 +34,10 @@ class KMeans:
 
             if (old_clusters==new_clusters):
                 print(f"""
-                achieved best possible result after {i} iterations
+                achieved after {i} iterations
                 """)
                 break
-                  
+
     def predict(self, X):
         """
         Generates predictions
@@ -81,6 +64,23 @@ class KMeans:
             returnArray.append(int(y_pred[i]))
         
         return returnArray
+
+    def make_clusters(self, X, centroids):
+        clusters = [ [] for _ in range(self.K)]
+        X = np.array(X) #transform from pd dataframe to numpy ndarray
+        for point_i, point_i_pos in enumerate(X):
+            if point_i > 0:
+                closest_centroid = np.argmin(euclidean_distance(point_i_pos, centroids))
+                clusters[closest_centroid].append(point_i)
+        return clusters
+
+    def improve_centroids(self, X, clusters):
+        new_centroids = np.zeros(shape=(self.K, self.n))
+        for i, cluster in enumerate(clusters):
+            new_centroid = np.mean(X.to_numpy()[cluster], axis=0)
+            new_centroids[i] = new_centroid
+        
+        return new_centroids        
 
     def get_centroids(self):
         """

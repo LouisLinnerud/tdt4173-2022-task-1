@@ -6,7 +6,7 @@ import pandas as pd
 class LogisticRegression:
     
     def __init__(self, alpha=0.05, iterations=1000):
-        self.alpha = alpha # alpha is learning rate
+        self.alpha = alpha
         self.iterations = iterations
 
     def fit(self, X ,Y,feature=False):
@@ -22,8 +22,7 @@ class LogisticRegression:
         """
         # m x n input (#features = n, #samples = m)
         if self.feature:
-            p1 = [-3,3]
-            p2 = [3,-3]
+            p1, p2 = [-3,3], [3,-3]
             X = add_linear_feature(X,p1, p2)
         self.m, self.n = X.shape 
         # setting initial weight and bias to zero
@@ -33,17 +32,14 @@ class LogisticRegression:
         self.Y = Y
         self.gradient_descend(self.iterations)
         
-
     def gradient_descend(self, n):
-        for i in range(n):
+        for _ in range(n):
             # Prediction
             Z = self.X.dot(self.w) + self.b # Z = w * X + b
             Y_hat = sigmoid(Z)
             # Update weight and bias
             dw = (1 / self.m) * np.dot(self.X.T, (Y_hat - self.Y))
             db = (1 / self.m) * np.sum(Y_hat - self.Y) 
-                #TODO
-                #is np.sum above nessicary?
             self.w -= self.alpha * dw
             self.b -= self.alpha * db
    
@@ -62,9 +58,9 @@ class LogisticRegression:
             with probability-like predictions
         """
         if self.feature:
-            p1 = [-3,3]
-            p2 = [3,-3]
+            p1, p2 = [-3,3], [3,-3]
             X = add_linear_feature(X,p1,p2)
+        
         Z = X.dot(self.w) + self.b # Z = w * X + b
         Y_hat = np.where(sigmoid(Z) > 0.5 , 1, 0)
 
@@ -124,14 +120,11 @@ def sigmoid( x):
     return 1. / (1. + np.exp(-x))
 
 def add_linear_feature(X,p1, p2):
-    p1=np.array(p1)
-    p2=np.array(p2)
-    X = np.array(X)
+    p1, p2, X =np.array(p1), np.array(p2), np.array(X)
     distances = []
     for i in range(0,len(X)):
         pos = X[i]
-        point = np.array(pos)
-        d = np.linalg.norm(np.cross(p2-p1, p1-point))/np.linalg.norm(p2-p1)
+        d = np.linalg.norm(np.cross(p2-p1, p1-pos))/np.linalg.norm(p2-p1)
         distances.append(d)
     feature_array = []
     for i in range(len(distances)):
